@@ -13,6 +13,10 @@ $ cd vue-getting-started
 
 $ liara deploy
 ```
+## Availabe Branches
+
+1.  [Adding liara.json file](https://github.com/liara-cloud/vue-getting-started/tree/liaraJson)
+2.  [Enable Caching with liara_nginx.conf file](https://github.com/liara-cloud/vue-getting-started/tree/nginxConfig)
 
 ## Documentation
 Read more on liara [VueJS apps documentation
