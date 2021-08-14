@@ -1,17 +1,19 @@
-# VueJS getting started
+# VueJS apps getting started
 
-Example of how running VueJS projects on Liara.
+Example of how deploy a simple VueJS project on [liara](https://liara.ir).
 
-Read more on Liara docs: https://docs.liara.ir/app-deploy/vue/getting-started
+## Deploying
 
+[Create New VueJS App](https://console.liara.ir/apps/create) & install the [Liara CLI](https://docs.liara.ir/cli/install)
 
-## Running Locally
+```bash
+$ git clone https://github.com/liara-cloud/vue-getting-started # or clone your own fork
 
-Make sure you have [NodeJS](https://nodejs.org/en/) and [NPM](https://www.npmjs.com/)
+$ cd vue-getting-started
 
-```sh
-git clone https://github.com/liara-cloud/vue-getting-started
-cd vue-getting-started
-npm install
-npm run serve
+$ liara deploy
 ```
+
+## Documentation
+Read more on liara [VueJS apps documentation
+](https://docs.liara.ir/app-deploy/vue/getting-started)
