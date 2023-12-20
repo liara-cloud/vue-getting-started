@@ -1,5 +1,6 @@
 <template>
   <h1>Hooray!</h1>
+  <h1>you finally did this!</h1>
   <canvas id="drawing_canvas"></canvas>
 </template>
 
