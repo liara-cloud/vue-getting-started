@@ -1,310 +1,293 @@
 <template>
   <h1>Hooray!</h1>
-  <h1>you finally did this!</h1>
-  <canvas id="drawing_canvas"></canvas>
+  <canvas ref="drawingCanvas"></canvas>
 </template>
 
-  <script>
-function ready(callbackFunc) {
-  if (document.readyState !== "loading") {
-    // Document is already ready, call the callback directly
-    callbackFunc();
-  } else if (document.addEventListener) {
-    // All modern browsers to register DOMContentLoaded
-    document.addEventListener("DOMContentLoaded", callbackFunc);
-  } else {
-    // Old IE browsers
-    document.attachEvent("onreadystatechange", function () {
-      if (document.readyState === "complete") {
-        callbackFunc();
-      }
-    });
-  }
-}
+<script>
+export default {
+  mounted() {
+    const TWO_PI = Math.PI * 2;
+    const HALF_PI = Math.PI * 0.5;
 
-ready(function () {
-  const TWO_PI = Math.PI * 2;
-  const HALF_PI = Math.PI * 0.5;
+    // canvas settings
+    let viewWidth = 512,
+      viewHeight = 350,
+      drawingCanvas = this.$refs.drawingCanvas,
+      ctx,
+      timeStep = 1 / 60;
 
-  // canvas settings
-  let viewWidth = 512,
-    viewHeight = 350,
-    drawingCanvas = document.getElementById("drawing_canvas"),
-    ctx,
-    timeStep = 1 / 60;
+    let Point = function (x, y) {
+      this.x = x || 0;
+      this.y = y || 0;
+    };
 
-  let Point = function (x, y) {
-    this.x = x || 0;
-    this.y = y || 0;
-  };
+    let Particle = function (p0, p1, p2, p3) {
+      this.p0 = p0;
+      this.p1 = p1;
+      this.p2 = p2;
+      this.p3 = p3;
 
-  let Particle = function (p0, p1, p2, p3) {
-    this.p0 = p0;
-    this.p1 = p1;
-    this.p2 = p2;
-    this.p3 = p3;
-
-    this.time = 0;
-    this.duration = 3 + Math.random() * 2;
-    this.color = "#" + Math.floor(Math.random() * 0xffffff).toString(16);
-
-    this.w = 8;
-    this.h = 6;
-
-    this.complete = false;
-  };
-
-  Particle.prototype = {
-    update: function () {
-      this.time = Math.min(this.duration, this.time + timeStep);
-
-      let f = Ease.outCubic(this.time, 0, 1, this.duration);
-      let p = cubeBezier(this.p0, this.p1, this.p2, this.p3, f);
-
-      let dx = p.x - this.x;
-      let dy = p.y - this.y;
-
-      this.r = Math.atan2(dy, dx) + HALF_PI;
-      this.sy = Math.sin(Math.PI * f * 10);
-      this.x = p.x;
-      this.y = p.y;
-
-      this.complete = this.time === this.duration;
-    },
-    draw: function () {
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.r);
-      ctx.scale(1, this.sy);
-
-      ctx.fillStyle = this.color;
-      ctx.fillRect(-this.w * 0.5, -this.h * 0.5, this.w, this.h);
-
-      ctx.restore();
-    },
-  };
-
-  let Loader = function (x, y) {
-    this.x = x;
-    this.y = y;
-
-    this.r = 24;
-    this._progress = 0;
-
-    this.complete = false;
-  };
-
-  Loader.prototype = {
-    reset: function () {
-      this._progress = 0;
-      this.complete = false;
-    },
-    set progress(p) {
-      this._progress = p < 0 ? 0 : p > 1 ? 1 : p;
-
-      this.complete = this._progress === 1;
-    },
-    get progress() {
-      return this._progress;
-    },
-    draw: function () {
-      ctx.fillStyle = "#fff";
-      ctx.beginPath();
-      ctx.arc(
-        this.x,
-        this.y,
-        this.r,
-        -HALF_PI,
-        TWO_PI * this._progress - HALF_PI
-      );
-      ctx.lineTo(this.x, this.y);
-      ctx.closePath();
-      ctx.fill();
-    },
-  };
-
-  // pun intended
-  let Exploader = function (x, y) {
-    this.x = x;
-    this.y = y;
-
-    this.startRadius = 24;
-
-    this.time = 0;
-    this.duration = 0.4;
-    this.progress = 0;
-
-    this.complete = false;
-  };
-
-  Exploader.prototype = {
-    reset: function () {
       this.time = 0;
-      this.progress = 0;
+      this.duration = 3 + Math.random() * 2;
+      this.color = "#" + Math.floor(Math.random() * 0xffffff).toString(16);
+
+      this.w = 8;
+      this.h = 6;
+
       this.complete = false;
-    },
-    update: function () {
-      this.time = Math.min(this.duration, this.time + timeStep);
-      this.progress = Ease.inBack(this.time, 0, 1, this.duration);
+    };
 
-      this.complete = this.time === this.duration;
-    },
-    draw: function () {
-      ctx.fillStyle = "#fff";
-      ctx.beginPath();
-      ctx.arc(
-        this.x,
-        this.y,
-        this.startRadius * (1 - this.progress),
-        0,
-        TWO_PI
-      );
-      ctx.fill();
-    },
-  };
+    Particle.prototype = {
+      update: function () {
+        this.time = Math.min(this.duration, this.time + timeStep);
 
-  let particles = [],
-    loader,
-    exploader,
-    phase = 0;
+        let f = Ease.outCubic(this.time, 0, 1, this.duration);
+        let p = cubeBezier(this.p0, this.p1, this.p2, this.p3, f);
 
-  function initDrawingCanvas() {
-    drawingCanvas.width = viewWidth;
-    drawingCanvas.height = viewHeight;
-    ctx = drawingCanvas.getContext("2d");
+        let dx = p.x - this.x;
+        let dy = p.y - this.y;
 
-    createLoader();
-    createExploader();
-    createParticles();
-  }
+        this.r = Math.atan2(dy, dx) + HALF_PI;
+        this.sy = Math.sin(Math.PI * f * 10);
+        this.x = p.x;
+        this.y = p.y;
 
-  function createLoader() {
-    loader = new Loader(viewWidth * 0.5, viewHeight * 0.5);
-  }
+        this.complete = this.time === this.duration;
+      },
+      draw: function () {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.r);
+        ctx.scale(1, this.sy);
 
-  function createExploader() {
-    exploader = new Exploader(viewWidth * 0.5, viewHeight * 0.5);
-  }
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.w * 0.5, -this.h * 0.5, this.w, this.h);
 
-  function createParticles() {
-    for (let i = 0; i < 128; i++) {
-      let p0 = new Point(viewWidth * 0.5, viewHeight * 0.5);
-      let p1 = new Point(Math.random() * viewWidth, Math.random() * viewHeight);
-      let p2 = new Point(Math.random() * viewWidth, Math.random() * viewHeight);
-      let p3 = new Point(Math.random() * viewWidth, viewHeight + 64);
+        ctx.restore();
+      },
+    };
 
-      particles.push(new Particle(p0, p1, p2, p3));
-    }
-  }
+    let Loader = function (x, y) {
+      this.x = x;
+      this.y = y;
 
-  function update() {
-    switch (phase) {
-      case 0:
-        loader.progress += 1 / 45;
-        break;
-      case 1:
-        exploader.update();
-        break;
-      case 2:
-        particles.forEach(function (p) {
-          p.update();
-        });
-        break;
-    }
-  }
+      this.r = 24;
+      this._progress = 0;
 
-  function draw() {
-    ctx.clearRect(0, 0, viewWidth, viewHeight);
+      this.complete = false;
+    };
 
-    switch (phase) {
-      case 0:
-        loader.draw();
-        break;
-      case 1:
-        exploader.draw();
-        break;
-      case 2:
-        particles.forEach(function (p) {
-          p.draw();
-        });
-        break;
-    }
-  }
+    Loader.prototype = {
+      reset: function () {
+        this._progress = 0;
+        this.complete = false;
+      },
+      set progress(p) {
+        this._progress = p < 0 ? 0 : p > 1 ? 1 : p;
 
-  window.onload = function () {
-    initDrawingCanvas();
-    requestAnimationFrame(loop);
-  };
+        this.complete = this._progress === 1;
+      },
+      get progress() {
+        return this._progress;
+      },
+      draw: function () {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(
+          this.x,
+          this.y,
+          this.r,
+          -HALF_PI,
+          TWO_PI * this._progress - HALF_PI
+        );
+        ctx.lineTo(this.x, this.y);
+        ctx.closePath();
+        ctx.fill();
+      },
+    };
 
-  function loop() {
-    update();
-    draw();
+    // pun intended
+    let Exploader = function (x, y) {
+      this.x = x;
+      this.y = y;
 
-    if (phase === 0 && loader.complete) {
-      phase = 1;
-    } else if (phase === 1 && exploader.complete) {
-      phase = 2;
-    } else if (phase === 2 && checkParticlesComplete()) {
-      // reset
-      phase = 2;
-      //loader.reset();
-      exploader.reset();
-      particles.length = 0;
+      this.startRadius = 24;
+
+      this.time = 0;
+      this.duration = 0.4;
+      this.progress = 0;
+
+      this.complete = false;
+    };
+
+    Exploader.prototype = {
+      reset: function () {
+        this.time = 0;
+        this.progress = 0;
+        this.complete = false;
+      },
+      update: function () {
+        this.time = Math.min(this.duration, this.time + timeStep);
+        this.progress = Ease.inBack(this.time, 0, 1, this.duration);
+
+        this.complete = this.time === this.duration;
+      },
+      draw: function () {
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(
+          this.x,
+          this.y,
+          this.startRadius * (1 - this.progress),
+          0,
+          TWO_PI
+        );
+        ctx.fill();
+      },
+    };
+
+    let particles = [],
+      loader,
+      exploader,
+      phase = 0;
+
+    function initDrawingCanvas() {
+      drawingCanvas.width = viewWidth;
+      drawingCanvas.height = viewHeight;
+      ctx = drawingCanvas.getContext("2d");
+
+      createLoader();
+      createExploader();
       createParticles();
     }
 
-    requestAnimationFrame(loop);
-  }
-
-  function checkParticlesComplete() {
-    for (let i = 0; i < particles.length; i++) {
-      if (particles[i].complete === false) return false;
+    function createLoader() {
+      loader = new Loader(viewWidth * 0.5, viewHeight * 0.5);
     }
-    return true;
-  }
 
-  // math and stuff
-  let Ease = {
-    inCubic: function (t, b, c, d) {
-      t /= d;
-      return c * t * t * t + b;
-    },
-    outCubic: function (t, b, c, d) {
-      t /= d;
-      t--;
-      return c * (t * t * t + 1) + b;
-    },
-    inOutCubic: function (t, b, c, d) {
-      t /= d / 2;
-      if (t < 1) return (c / 2) * t * t * t + b;
-      t -= 2;
-      return (c / 2) * (t * t * t + 2) + b;
-    },
-    inBack: function (t, b, c, d, s) {
-      s = s || 1.70158;
-      return c * (t /= d) * t * ((s + 1) * t - s) + b;
-    },
-  };
+    function createExploader() {
+      exploader = new Exploader(viewWidth * 0.5, viewHeight * 0.5);
+    }
 
-  function cubeBezier(p0, c0, c1, p1, t) {
-    let p = new Point();
-    let nt = 1 - t;
+    function createParticles() {
+      for (let i = 0; i < 128; i++) {
+        let p0 = new Point(viewWidth * 0.5, viewHeight * 0.5);
+        let p1 = new Point(Math.random() * viewWidth, Math.random() * viewHeight);
+        let p2 = new Point(Math.random() * viewWidth, Math.random() * viewHeight);
+        let p3 = new Point(Math.random() * viewWidth, viewHeight + 64);
 
-    p.x =
-      nt * nt * nt * p0.x +
-      3 * nt * nt * t * c0.x +
-      3 * nt * t * t * c1.x +
-      t * t * t * p1.x;
-    p.y =
-      nt * nt * nt * p0.y +
-      3 * nt * nt * t * c0.y +
-      3 * nt * t * t * c1.y +
-      t * t * t * p1.y;
+        particles.push(new Particle(p0, p1, p2, p3));
+      }
+    }
 
-    return p;
-  }
-});
+    function update() {
+      switch (phase) {
+        case 0:
+          loader.progress += 1 / 45;
+          break;
+        case 1:
+          exploader.update();
+          break;
+        case 2:
+          particles.forEach(function (p) {
+            p.update();
+          });
+          break;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, viewWidth, viewHeight);
+
+      switch (phase) {
+        case 0:
+          loader.draw();
+          break;
+        case 1:
+          exploader.draw();
+          break;
+        case 2:
+          particles.forEach(function (p) {
+            p.draw();
+          });
+          break;
+      }
+    }
+
+    initDrawingCanvas();
+    requestAnimationFrame(loop);
+
+    function loop() {
+      update();
+      draw();
+
+      if (phase === 0 && loader.complete) {
+        phase = 1;
+      } else if (phase === 1 && exploader.complete) {
+        phase = 2;
+      } else if (phase === 2 && checkParticlesComplete()) {
+        // reset
+        phase = 2;
+        //loader.reset();
+        exploader.reset();
+        particles.length = 0;
+        createParticles();
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    function checkParticlesComplete() {
+      for (let i = 0; i < particles.length; i++) {
+        if (particles[i].complete === false) return false;
+      }
+      return true;
+    }
+
+    // math and stuff
+    let Ease = {
+      inCubic: function (t, b, c, d) {
+        t /= d;
+        return c * t * t * t + b;
+      },
+      outCubic: function (t, b, c, d) {
+        t /= d;
+        t--;
+        return c * (t * t * t + 1) + b;
+      },
+      inOutCubic: function (t, b, c, d) {
+        t /= d / 2;
+        if (t < 1) return (c / 2) * t * t * t + b;
+        t -= 2;
+        return (c / 2) * (t * t * t + 2) + b;
+      },
+      inBack: function (t, b, c, d, s) {
+        s = s || 1.70158;
+        return c * (t /= d) * t * ((s + 1) * t - s) + b;
+      },
+    };
+
+    function cubeBezier(p0, c0, c1, p1, t) {
+      let p = new Point();
+      let nt = 1 - t;
+
+      p.x =
+        nt * nt * nt * p0.x +
+        3 * nt * nt * t * c0.x +
+        3 * nt * t * t * c1.x +
+        t * t * t * p1.x;
+      p.y =
+        nt * nt * nt * p0.y +
+        3 * nt * nt * t * c0.y +
+        3 * nt * t * t * c1.y +
+        t * t * t * p1.y;
+
+      return p;
+    }
+  },
+};
 </script>
+
 <style>
 @font-face {
   font-family: BeautifulPeople;
@@ -334,4 +317,11 @@ h1 {
   left: 0;
   right: 0;
 }
+
+canvas {
+  display: block; 
+  margin: auto; 
+  position: relative; 
+}
+
 </style>

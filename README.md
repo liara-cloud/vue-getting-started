@@ -1,19 +1,24 @@
-# VueJS apps getting started
+# vue-particles
 
-Example of how deploy a simple VueJS project on [liara](https://liara.ir).
-
-## Deploying
-
-[Create New VueJS App](https://console.liara.ir/apps/create) & install the [Liara CLI](https://docs.liara.ir/cli/install)
-
-```bash
-$ git clone https://github.com/liara-cloud/vue-getting-started # or clone your own fork
-
-$ cd vue-getting-started
-
-$ liara deploy
+## Project setup
+```
+npm install
 ```
 
-## Documentation
-Read more on liara [VueJS apps documentation
-](https://docs.liara.ir/app-deploy/vue/getting-started)
+### Compiles and hot-reloads for development
+```
+npm run serve
+```
+
+### Compiles and minifies for production
+```
+npm run build
+```
+
+### Lints and fixes files
+```
+npm run lint
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
